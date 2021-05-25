@@ -1,4 +1,5 @@
-
+//
+// g++  -Wall -O3 -std=c++20 -O3 -o find_longest_word_tree find_longest_word_tree.cpp
 #include <iostream>
 #include <string>
 #include <iomanip>
