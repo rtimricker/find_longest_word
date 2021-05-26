@@ -34,12 +34,13 @@ struct Node {
 
 inline auto newNode(const char key) -> NodePtr
 {
-    auto temp = make_shared<NodePtr> (new Node);
+    shared_ptr<NodePtr> temp = make_shared<NodePtr>(new Node);
+//    unique_ptr<NodePtr> temp = make_unique<NodePtr>(new Node);
     (*temp)->key = key;
     return *temp;
 }
 
-inline static Node * root{nullptr};
+inline static NodePtr root {nullptr};
 
 inline auto greaterthan = [](const string & i, const string & j) { return (i.length() > j.length());};
 
@@ -69,20 +70,15 @@ inline auto find_char_node (const char key, const NodePtr node, NodePtr & retNod
 }
 
 inline auto isWord (
-                const string word, 
-                NodePtr node,
-                NodePtr & retNode
+                const string & word, 
+                NodePtr node
                 ) -> bool
 {
-    if (node == nullptr) {
+    if (node == nullptr || word.length() == 0) {
         return false;
     }
 
-    if (word.length() == 0) {
-        return false;
-    }
-
-    retNode = node;
+    NodePtr retNode {nullptr};
 
     bool retval {false};
     for (auto & letter : word) {
@@ -90,11 +86,11 @@ inline auto isWord (
         if (retval) {
             node = retNode;
         } else {
-            return false;       // letter in word not there
+            break;
         }
     }
 
-    // have to test for EOW after the loop; all letter in word accounted for
+    // have to test for EOW after the loop; all letters in word accounted for
     if (retval && retNode->EOW) {
         return true;
     }
@@ -103,42 +99,36 @@ inline auto isWord (
 }
 
 inline auto isCompoundWord(
-                const string word,
+                const string & word,
                 NodePtr node,
-                NodePtr & retNode,
                 StringVector & retVector
-                ) -> void
+                ) -> bool
 {
-    if (node == nullptr) {
-        return;
-    }
-
-    if (word.length() == 0) {
-        return;
+    if (node == nullptr || word.length() == 0) {
+        return false;
     }
 
     string wordstr;
-    retNode = node;
     retVector.clear();
+    NodePtr retNode;
 
     for (auto & letter : word) {
-        bool retval = find_char_node (letter, node, retNode);
-        if (retval) {
+        if (find_char_node (letter, node, retNode)) {
             wordstr += letter;
             if (retNode->EOW || wordstr.length() == word.length() - 1) {
                 retVector.emplace_back(wordstr);
             }
             node = retNode;
         } else {
-            return;
+            break;
         }
     }
 
-//    if (retVector.size()) {
-//        return;
-//    }
-//
-    return;
+    if (retVector.size()) {
+        return true;
+    }
+
+    return false;
 }
 
 inline auto add_word_to_tree(string word, NodePtr node) -> void
@@ -165,7 +155,7 @@ inline auto add_word_to_tree(string word, NodePtr node) -> void
                 temp_str += retNode->key;
                 if (temp_str.length() == word.length()) {
                     if (!retNode->EOW) {
-                        retNode->EOW = true;    // since adding word within another word
+                        retNode->EOW = true;    // since adding word within another word, mark
                     }
                     return;
                 }
@@ -173,7 +163,7 @@ inline auto add_word_to_tree(string word, NodePtr node) -> void
             }
         }
     }
-    lastNode->EOW = true;
+    lastNode->EOW = true;               // mark
 }
 
 class DFS {
@@ -290,15 +280,14 @@ int main()
             StringVector tempvector;
             for (auto & list_word : listOfWords) {
                 // get all words in compound word
-                isCompoundWord(list_word, getRoot(), retNode, retVector); 
-                // make sure its a unique string entry vector
-                if (retVector.size()) {
+                bool retval = isCompoundWord(list_word, getRoot(), retVector); 
+                if (retval && retVector.size()) {
                     for (auto & prefix : retVector) {
                         string remainder = list_word.substr(prefix.length(), -1);
                         if (prefix.length() < 2 || remainder.length() < 2) continue;
                         auto it = end(wordMap);
                         it = wordMap.emplace_hint(it, prefix, remainder);
-                        bool retval = isWord (remainder, getRoot(), retNode);
+                        retval = isWord (remainder, getRoot());
                         tempvector.emplace_back(remainder);
                         if (retval == true) {
                             // found compound word
