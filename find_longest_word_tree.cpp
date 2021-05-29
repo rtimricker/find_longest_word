@@ -33,11 +33,7 @@ struct Node {
     NodePtr parent;
 };
 
-<<<<<<< HEAD
-#if 0
-=======
 #if 1
->>>>>>> 525bead86e3f95c0027858b3e74c174f4b28a858
 inline auto newNode = [] (const char key) {
     shared_ptr<NodePtr> temp = make_shared<NodePtr>(new Node(key));
     return *temp;
