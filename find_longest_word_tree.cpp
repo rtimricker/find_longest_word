@@ -25,6 +25,7 @@ using NodePtrVector = vector<Node*>;
 using NodePtr = Node*;
 
 struct Node {
+    inline Node(char ch) : key {ch}, EOW {0}, parent {nullptr} {}
     inline Node() : key {0}, EOW {0}, parent {nullptr} {}
     char key;
     bool EOW;
@@ -32,7 +33,11 @@ struct Node {
     NodePtr parent;
 };
 
+<<<<<<< HEAD
+#if 0
+=======
 #if 1
+>>>>>>> 525bead86e3f95c0027858b3e74c174f4b28a858
 inline auto newNode = [] (const char key) {
     shared_ptr<NodePtr> temp = make_shared<NodePtr>(new Node(key));
     return *temp;
@@ -205,8 +210,6 @@ int display_count = 0;
 int main()
 {
     string line;
-    NodePtr retNode = nullptr;
-
     auto total_lines_read = 0;
 
     string filename ("wordsforproblem.txt");
@@ -235,7 +238,6 @@ int main()
         add_word_to_tree(word, root);
     }
     cout << endl;
-    retNode = nullptr;
 
     //string word = "ratcatdogcat";
     //word = "cat";
