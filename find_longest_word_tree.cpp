@@ -32,18 +32,17 @@ struct Node {
     NodePtr parent;
 };
 
-//inline auto newNode(const char key) -> NodePtr
-//{
-//    shared_ptr<NodePtr> temp = make_shared<NodePtr>(new Node);
-////    unique_ptr<NodePtr> temp = make_unique<NodePtr>(new Node);
-//    (*temp)->key = key;
-//    return *temp;
-//}
-
-auto newNode = [] (const char key) {
-    auto sp = new Node(key);
-    return sp;
+#if 1
+inline auto newNode = [] (const char key) {
+    shared_ptr<NodePtr> temp = make_shared<NodePtr>(new Node(key));
+    return *temp;
 };
+#else
+inline auto newNode = [] (const char key) {
+    auto p = new Node(key);
+    return p;
+};
+#endif
 
 inline static NodePtr root {nullptr};
 
