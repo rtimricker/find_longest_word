@@ -1,7 +1,7 @@
 //
 // g++  -Wall -O3 -std=c++20 -O3 -o find_longest_word_tree find_longest_word_tree.cpp
 //
-#include <iostream>
+#include <iostream> 
 #include <string>
 #include <iomanip>
 #include <fstream>
@@ -13,54 +13,51 @@
 
 using namespace std;
 
-using StringVector = vector<string>;
-using IntVector = vector<int>;
-
 // ==============================
 // m-ary tree
 //
 
 struct Node;
-using NodePtrVector = vector<Node*>;
-using NodePtr = Node*;
 
 struct Node {
-    inline Node(char ch) : key {ch}, EOW {0}, parent {nullptr} {}
+    explicit inline Node(char ch) : key {ch}, EOW {0}, parent {nullptr} {}
     inline Node() : key {0}, EOW {0}, parent {nullptr} {}
     char key;
     bool EOW;
-    NodePtrVector child;
-    NodePtr parent;
+    Node * parent;
+    vector<Node*> child;
+    ~Node () {}
 };
 
-#if 1
+#if 0
 inline auto newNode = [] (const char key) {
-    shared_ptr<NodePtr> temp = make_shared<NodePtr>(new Node(key));
+    shared_ptr<Node*> temp = make_shared<Node*>(new Node(key));
     return *temp;
 };
 #else
 inline auto newNode = [] (const char key) {
-    auto p = new Node(key);
-    return p;
+//    auto p = new Node(key);
+//    return p;
+    return new Node(key);
 };
 #endif
 
-inline static NodePtr root {nullptr};
+inline static Node * root {nullptr};
 
 inline auto greaterthan = [](const string & i, const string & j) { return (i.length() > j.length());};
 
-inline constexpr auto setRoot(NodePtr _root) -> void
+inline constexpr auto setRoot(Node * _root) -> void
 {
     root = _root;
 }
 
-inline auto getRoot() -> NodePtr
+inline auto getRoot() -> Node *
 {
     return root;
 }
 
 // Pass key in val, root or parent node of key node, on success a return true and retNode has its node.
-inline auto find_char_node (const char key, const NodePtr node, NodePtr & retNode) -> bool
+inline auto find_char_node (const char key, const Node * node, Node * & retNode) -> bool
 {
     retNode = nullptr;
     for  (auto & iter : node->child) {
@@ -76,14 +73,14 @@ inline auto find_char_node (const char key, const NodePtr node, NodePtr & retNod
 
 inline auto isWord (
                 const string & word, 
-                NodePtr node
+                Node * node
                 ) -> bool
 {
     if (node == nullptr || word.length() == 0) {
         return false;
     }
 
-    NodePtr retNode {nullptr};
+    Node * retNode {nullptr};
 
     bool retval {false};
     for (auto & letter : word) {
@@ -105,8 +102,8 @@ inline auto isWord (
 
 inline auto isCompoundWord(
                 const string & word,
-                NodePtr node,
-                StringVector & retVector
+                Node * node,
+                vector<string> & retVector
                 ) -> bool
 {
     if (node == nullptr || word.length() == 0) {
@@ -115,7 +112,7 @@ inline auto isCompoundWord(
 
     string wordstr;
     retVector.clear();
-    NodePtr retNode;
+    Node * retNode;
 
     for (auto & letter : word) {
         if (find_char_node (letter, node, retNode)) {
@@ -136,14 +133,14 @@ inline auto isCompoundWord(
     return false;
 }
 
-inline auto add_word_to_tree(string word, NodePtr node) -> void
+inline auto add_word_to_tree(string word, Node * node) -> void
 {
     if (node == nullptr) {
         return;
     }
 
-    NodePtr retNode {nullptr};
-    NodePtr lastNode {nullptr};
+    Node * retNode {nullptr};
+    Node * lastNode {nullptr};
     string temp_str;
     for (auto & letter : word) {
         if (node != nullptr) {
@@ -175,7 +172,7 @@ class DFS {
 public:
     constexpr DFS () {}
 
-//    inline auto pre(const Node * node, IntVector * ans) -> const void {
+//    inline auto pre(const Node * node, vector<int> * ans) -> const void {
 //        ans->emplace_back(node->key);
 //        for (Node * child : node->child) {
 //            pre(child, ans);
@@ -183,7 +180,7 @@ public:
 //    }
 
     //inline constexpr auto findDepthOfTree(const struct Node *node) -> int
-    inline auto findDepthOfTree(const NodePtr node) -> int
+    inline auto findDepthOfTree(const Node * node) -> int
     {
         if (node == NULL) {
             return 0;
@@ -198,8 +195,51 @@ public:
     }
 };
 
-NodePtrVector node_delete;
-StringVector v_the_list;
+vector<Node*> node_delete;
+
+// Prints the m-ary tree level wise
+auto _LevelOrderTraversal(Node * root) -> void
+{
+    if (root == nullptr) {
+        return;
+    }
+
+//    cout << "_LevelOrderTraversal()\n";
+
+    // Standard level order traversal code
+    // using queue
+    queue<Node *> q; // Create a queue
+    q.push(root); // Enqueue root
+    node_delete.emplace_back(root);
+    while (!q.empty()) {
+        int n = q.size();
+
+        // If this node has children
+        while (n > 0) {
+            // Dequeue an item from queue and print it
+            Node * p = q.front();
+            q.pop();
+//            cout << "[" << (int)p->key << ":" << p->key << "]";
+
+            // Enqueue all children of the dequeued item
+            for (size_t i=0; i < p->child.size(); ++i) {
+                q.push(p->child[i]);
+                node_delete.emplace_back(p->child[i]);
+            }
+
+            n--;
+        }
+    }
+    // correct a memory leak
+    for(auto n : node_delete) {
+        if (n) {
+            delete n;
+            n = nullptr;
+        }
+    }
+}
+
+vector<string> v_the_list;
 
 int display_count = 0;
 
@@ -224,7 +264,8 @@ int main()
 	}
         myfile.close();
     } else {
-        cout << "myfile NOT open" << endl;
+        cout << "myfile NOT open\n";
+        return 0;
     }
 
     root = newNode('/');
@@ -233,7 +274,7 @@ int main()
     for (auto & word : v_the_list) {
         add_word_to_tree(word, root);
     }
-    cout << endl;
+    cout << "\n";
 
     //string word = "ratcatdogcat";
     //word = "cat";
@@ -257,12 +298,12 @@ int main()
     //word = "catx";
 
 // ==========
-    StringVector matchVector;
+    vector<string> matchVector;
 
     // this seems to allow for the output to be alphabetic and length sorted
     sort(begin(v_the_list), end(v_the_list), greaterthan);
 
-//StringVector test_list;
+//vector<string> test_list;
 //string word = "ethylenediaminetetraacetates";
 //test_list.emplace_back(word);
 //word = "ethylenediaminetetraacetate";
@@ -270,8 +311,8 @@ int main()
 //    for (auto word : test_list)
     for (auto & word : v_the_list) 
     {
-        StringVector retVector;
-        StringVector listOfWords;
+        vector<string> retVector;
+        vector<string> listOfWords;
 
         listOfWords.emplace_back(word);
         map <string, string> wordMap;
@@ -279,12 +320,12 @@ int main()
         string lastRemainder;
 
         while (listOfWords.size()) {
-            StringVector tempvector;
+            vector<string> tempvector;
             for (auto & list_word : listOfWords) {
                 // get all words in compound word
                 bool retval = isCompoundWord(list_word, getRoot(), retVector); 
                 if (retval && retVector.size()) {
-                    for (auto & prefix : retVector) {
+                    for (auto prefix : retVector) {
                         string remainder = list_word.substr(prefix.length(), -1);
                         if (prefix.length() < 2 || remainder.length() < 2) continue;
                         auto it = end(wordMap);
@@ -323,13 +364,13 @@ restart:
         }
     }
 
-    cout << "words read in: " << v_the_list.size() << endl;
-    cout << "total lines read in: " <<  total_lines_read << endl;
-    cout << "Compound words found: " << matchVector.size() << endl;
+    cout << "words read in: " << v_the_list.size() << "\n";
+    cout << "total lines read in: " <<  total_lines_read << "\n";
+    cout << "Compound words found: " << matchVector.size() << "\n";
     size_t matchCnt {0};
 
     for (auto & w : matchVector) {
-        cout << "\t[" << w << "]" << endl;
+        cout << "\t[" << w << "]\n";
         matchCnt++;
         if (matchCnt >= 10) break;
     }
@@ -337,12 +378,15 @@ restart:
     DFS dfs;
 
     int depth = dfs.findDepthOfTree(root);
-    cout << endl << "Tree Depth: " << depth << endl;
+    cout << "\nTree Depth: " << depth << "\n";
 
     if (root) {
-        cout << "we have a root node " << endl;
-        cout << "size of child vector at root: " << root->child.size() << " " << endl;
+        cout << "we have a root node\n";
+        cout << "size of child vector at root: " << root->child.size() << " \n";
     }
+
+    cout << "delete all Nodes\n";
+    _LevelOrderTraversal(root);
 
     return 0;
 }
